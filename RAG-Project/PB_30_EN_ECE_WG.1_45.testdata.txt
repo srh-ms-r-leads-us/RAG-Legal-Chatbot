@@ -1,0 +1,69 @@
+1.
+
+L: Easy
+Q: What are the three key policy strategies recommended for unlocking the potential of an ageing workforce?
+A: Readying the workforce for the future, retaining older workers in the workforce, and re-engaging previously retired older workers.
+N: p.3, “Policy strategies to unlock the potential of an ageing workforce”
+
+2.
+
+L: Easy
+Q: Why do some older people choose to work beyond the statutory retirement age?
+A: To find continued purpose, social engagement, and mental stimulation. These are referred to as “encore careers.”
+N: p.14, “Re-engage older workers beyond retirement age” 
+
+3.
+
+L: Easy
+Q: What are the two most cited reasons why older workers do not participate in education or training?
+A: Lack of support from employers and lack of financial resources.
+N: p.3, “Ready the workforce for the future”
+
+4.
+
+L: Medium
+Q: How does Austria’s “Level Up” initiative support adults with low educational attainment?
+A: It provides free basic and compulsory education, curricular deepening, coaching, and transition counselling.
+N: p.4, “Offering access to lifelong learning”; p.5, “Adult training initiative ‘Level Up’”
+
+5.
+
+L: Medium
+Q: What strategies does the brief identify for combating ageism in the labour market?
+A: Strengthening legal protections, promoting inclusive hiring practices, conducting research on ageism, and raising awareness.
+N: p.10, “Combating age discrimination in the labour market”
+
+6.
+
+L: Medium
+Q: How does Denmark prevent employers from screening job applicants based on age?
+A: Employers may not request an applicant’s age during the application process, and age and date-of-birth fields must be removed from recruitment systems.
+N: p.10, “Combating age discrimination in the labour market”; p.11, “Prohibition against employers screening job applicants based on their age”
+
+7.
+
+L: Hard
+Q: How do Austria and Luxembourg financially support the employment of older unemployed workers?
+A: Austria provides wage subsidies for hiring unemployed older workers. Luxembourg provides re-employment aid to older workers accepting a lower-paid job, totalling 90 per cent of their previous salary for up to 48 months.
+N: p.13, “Financial incentives for hiring unemployed job seekers”
+
+8.
+
+L: Hard
+Q: Why can reskilling and upskilling be difficult to implement effectively for older workers in carbon-intensive industries?
+A: Employers may be less willing to invest because there is less time to recoup training costs before retirement, while older workers may expect lower returns from retraining and be less geographically mobile.
+N: p.8, Box 1, “Just transitions and older workers”
+
+9.
+
+L: Hard
+Q: How can pension and tax systems financially discourage people from working after retirement?
+A: Work income combined with pension income can increase tax liability, cause loss of tax credits or deductions, reduce pension payments, or make a larger portion of pension income taxable.
+N: p.14, “Removing financial disincentives to work” 
+
+10.
+
+L: Very Hard
+Q: What two factors does the brief identify as critical to the effectiveness of its ageing-workforce strategies?
+A: Sufficient, timely and detailed data on older and retired workers, and active participation by social partners, trade unions, employers, and older workers themselves.
+N: p.16, “Conclusions” 

@@ -1,0 +1,6 @@
+venv/
+RAG-Project/venv/
+*.zip
+__pycache__/
+*.pyc
+.env

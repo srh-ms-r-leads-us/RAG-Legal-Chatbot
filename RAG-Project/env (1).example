@@ -1,0 +1,143 @@
+# =============================================================================
+# RAG Chatbot — Environment Configuration
+# =============================================================================
+# Copy this file to .env and adjust values for your environment.
+# Never commit .env to version control (it is listed in .gitignore).
+# =============================================================================
+
+
+# -----------------------------------------------------------------------------
+# PATHS
+# -----------------------------------------------------------------------------
+
+PDF_DIR=D:/Ritu/rag-chatbot/data/raw
+OUTPUT_DIR=D:/Ritu/rag-chatbot/data/processed
+CHROMA_DIR=D:/Ritu/rag-chatbot/data/chroma_db
+
+
+# -----------------------------------------------------------------------------
+# CHUNKING
+# -----------------------------------------------------------------------------
+
+CHUNK_SIZE=400
+CHUNK_OVERLAP=80
+MIN_CHUNK_WORDS=30
+MIN_PAGE_CHARS=100
+
+# Chunking strategy: static | sentence | structure
+# static    — fixed 400-word sliding window (original, fastest)
+# sentence  — cuts at sentence boundaries (never mid-sentence)
+# structure — detects headings/sections (best for UNECE docs)
+CHUNK_STRATEGY=structure
+
+# Extract tables from PDFs (requires: pip install pdfplumber)
+EXTRACT_TABLES=true
+
+# Describe images/charts with LLaVA vision model
+# Requires: ollama pull llava  (warning: slow, ~2-5 min per PDF)
+EXTRACT_IMAGES=false
+
+
+# -----------------------------------------------------------------------------
+# EMBEDDING MODEL
+# -----------------------------------------------------------------------------
+
+EMBED_MODEL=all-MiniLM-L6-v2
+EMBED_BATCH_SIZE=50
+HF_TOKEN=
+TRANSFORMERS_OFFLINE=1
+
+
+# -----------------------------------------------------------------------------
+# CHROMADB
+# -----------------------------------------------------------------------------
+
+CHROMA_COLLECTION=unece_documents
+CHROMA_DISTANCE_METRIC=cosine
+
+
+# -----------------------------------------------------------------------------
+# RETRIEVAL ENGINE
+# -----------------------------------------------------------------------------
+
+RETRIEVAL_TOP_K=5
+RETRIEVAL_MIN_SCORE=0.45
+RETRIEVAL_EXCLUDE_PAGES={"PB_30_EN_ECE_WG.1_45": [19, 20]}
+
+
+# -----------------------------------------------------------------------------
+# HYBRID SEARCH
+# -----------------------------------------------------------------------------
+
+HYBRID_SEARCH_ENABLED=true
+HYBRID_FETCH_K=20
+HYBRID_RRF_K=60
+HYBRID_VECTOR_WEIGHT=0.7
+
+
+# -----------------------------------------------------------------------------
+# RERANKING
+# -----------------------------------------------------------------------------
+
+RERANKER_ENABLED=true
+RERANKER_MODEL=cross-encoder/ms-marco-MiniLM-L-6-v2
+RERANKER_CANDIDATES=20
+
+
+# -----------------------------------------------------------------------------
+# API SERVER
+# -----------------------------------------------------------------------------
+
+API_HOST=0.0.0.0
+API_PORT=8080
+API_PREFIX=/api/v1
+API_MAX_TOP_K=20
+API_CORS_ORIGINS=http://localhost:8501,http://127.0.0.1:8501
+LOG_LEVEL=INFO
+LOG_FILE=
+
+
+# -----------------------------------------------------------------------------
+# LLM — OLLAMA
+# -----------------------------------------------------------------------------
+
+# Ollama server URL — default when running locally
+OLLAMA_BASE_URL=http://localhost:11434
+
+# Model to use — must be pulled first with: ollama pull mistral
+# Options: mistral | llama3 | llama3.2 | phi3 | gemma2
+OLLAMA_MODEL=mistral
+
+# Maximum tokens the LLM can generate in one response
+OLLAMA_MAX_TOKENS=1024
+
+# Temperature — controls creativity (0.0 = factual, 1.0 = creative)
+# Keep low for document Q&A to reduce hallucination
+OLLAMA_TEMPERATURE=0.1
+
+# Timeout in seconds for a single LLM response
+OLLAMA_TIMEOUT=120
+
+# Stream tokens to the UI as they are generated (true = better UX)
+OLLAMA_STREAM=true
+
+
+# -----------------------------------------------------------------------------
+# STREAMLIT UI
+# -----------------------------------------------------------------------------
+
+# URL of the FastAPI backend the UI talks to
+UI_API_BASE_URL=http://localhost:8080/api/v1
+
+# Page title shown in the browser tab
+UI_PAGE_TITLE=UNECE Policy Chatbot
+
+# Maximum number of messages kept in chat history per session
+UI_MAX_HISTORY=50
+
+
+# -----------------------------------------------------------------------------
+# VERIFICATION / TESTING
+# -----------------------------------------------------------------------------
+
+VERIFY_TOP_K=3
