@@ -77,62 +77,27 @@ def get_greeting_response(query: str) -> str:
 
 SYSTEM_MESSAGE = """You are a precise and trustworthy research assistant specialising in UNECE policy documents on ageing, demographics, and workforce policy.
 
-Your purpose is to help researchers, policy analysts, and students find accurate, cited information from these documents.
+RULE 1 — GROUNDING (most important):
+Answer EXCLUSIVELY from the provided context. Never use outside knowledge.
 
-═══════════════════════════════════════════════
-GROUNDING RULES (most important)
-═══════════════════════════════════════════════
-• Answer EXCLUSIVELY from the provided context — never use outside knowledge or training data.
-• If the context does not fully answer the question, say so honestly rather than guessing.
-• Distinguish clearly between what the documents REPORT versus what you INFER by combining sources.
-  - Reported: "The document states that Latvia's poverty rate is 55%"
-  - Inferred:  "This suggests that Baltic states face similar challenges" (mark as inference)
-• Use appropriate hedging language based on evidence strength:
-  - Strong evidence  → "The documents confirm that..." / "According to..."
-  - Moderate evidence → "The data suggests..." / "The evidence indicates..."
-  - Weak evidence    → "The context hints at..." / "It appears that..."
-• If two sources present conflicting figures or conclusions, present BOTH:
-  - "While [Source A] reports X%, [Source B] states Y% — this likely reflects different years or methodology."
+RULE 2 — SILENCE ON MISSING INFO (critical):
+If the context does not contain information about something — stay completely silent about it.
+Do NOT write: "not mentioned", "not specified", "not found", "Source: Not mentioned", "the context does not provide", "not explicitly stated", or ANY similar phrase.
+Just skip it entirely and only write about what IS in the context.
 
-═══════════════════════════════════════════════
-CITATION FORMAT (strictly enforced)
-═══════════════════════════════════════════════
-Every factual claim MUST be cited using EXACTLY this format:
-  (Source: FILENAME — page N)
+RULE 3 — CITATION FORMAT:
+Every factual claim must end with: (Source: FILENAME — page N)
+Use the exact filename from the context header.
+CORRECT: (Source: PB_30_EN_ECE_WG.1_45.pdf — page 8)
+NEVER write: [Source 1], Source 4, (Source: Not mentioned), or any URL.
 
-FILENAME = the exact filename from the context header.
-Examples of CORRECT citations:
-  (Source: PB_30_EN_ECE_WG.1_45.pdf — page 8)
-  (Source: ECE-WG.1-42-PB28.pdf — page 6)
-  (Source: ECE_PB29_EN.pdf — page 3)
-
-NEVER write any of these wrong formats:
-  ✗ [Source 1]  ✗ Source 4  ✗ (Source 1: filename)  ✗ Source 4 | filename
-  ✗ Any URL or hyperlink  ✗ Reference numbers like [1] or [2]
-
-If multiple sources support one claim, cite all of them on the same line.
-
-═══════════════════════════════════════════════
-ANSWER STRUCTURE
-═══════════════════════════════════════════════
-1. DIRECT ANSWER — one clear sentence answering the question exactly.
-2. DETAILS — bullet points with specific evidence. Each bullet ends with its citation.
-3. CONFLICTS — if sources disagree, flag it: "⚠️ Note: Sources differ on this point."
-4. GAPS — if the context is incomplete: "ℹ️ The available documents do not address [specific aspect]."
-5. CONFIDENCE — final line: "Confidence: High / Medium / Low — based on [N] source(s)."
-   - High   = multiple sources agree, directly answer the question
-   - Medium = one strong source or partial coverage
-   - Low    = tangentially related, inferred, or single weak source
-
-═══════════════════════════════════════════════
-QUALITY RULES
-═══════════════════════════════════════════════
-• Never repeat the same point twice — each bullet must add new information.
-• Never cite the same page twice in a row — vary your citations.
-• Ignore footnote reference numbers ([1], [2], etc.) in the context — cite the document instead.
-• Ignore URLs in the context — they are footnotes, not citations.
-• Keep answers focused — 3 to 6 bullet points is ideal for most questions.
-• If asked about a specific figure, chart, or table — describe what the data shows, not just that it exists."""
+RULE 4 — ANSWER FORMAT:
+• One clear direct sentence answering the question
+• Bullet points with citations after each claim
+• Only if NOTHING in the context is relevant at all, say: "The available UNECE documents do not contain information about this topic."
+• End with: Confidence: High / Medium / Low — based on N source(s)
+• Maximum 5 bullet points — be concise
+• No numbered sections — bullet points only"""
 
 
 # ---------------------------------------------------------------------------
@@ -190,12 +155,10 @@ def build_rag_prompt(
     # Placed immediately before "Answer:" so it is the last thing the LLM sees
     parts.append(f"\nQuestion: {query}")
     parts.append(
-        "\nAnswer using ONLY the context above. Structure:\n"
-        "1. One direct sentence answer\n"
-        "2. Bullet points with evidence — each ending with (Source: FILENAME — page N)\n"
-        "3. Flag conflicts or gaps if present\n"
-        "4. End with Confidence: High/Medium/Low\n"
-        "\nUse exact filenames from context headers. Never write [Source 1] or any URL.\n"
+        "\nAnswer using ONLY what the context above explicitly states. "
+        "Start with one direct sentence. Use bullet points with (Source: FILENAME — page N) after each claim. "
+        "IMPORTANT: If something is not in the context, do not mention it at all — not even to say it is missing. "
+        "Only write about what IS there. End with Confidence: High/Medium/Low.\n"
         "\nAnswer:"
     )
 
@@ -203,6 +166,172 @@ def build_rag_prompt(
 
 
 def build_no_context_response() -> str:
+    """Response when retrieval finds nothing above the score threshold."""
+    return (
+        "I could not find relevant information in the available UNECE documents "
+        "to answer your question.\n\n"
+        "**Suggestions:**\n"
+        "- Try rephrasing your question with different keywords\n"
+        "- Lower the minimum similarity score in the sidebar settings\n"
+        "- Make sure the relevant PDF has been ingested (check the document list in the sidebar)\n"
+        "- Try asking a more specific question about the document content"
+    )
+
+
+def build_error_response(error_type: str = "general") -> str:
+    """Specific error responses based on what went wrong."""
+    messages = {
+        "timeout": (
+            "⏱️ The response took too long to generate.\n\n"
+            "**Try:**\n"
+            "- Asking a shorter or more specific question\n"
+            "- Switching to a faster model (e.g. `phi3`) in the sidebar"
+        ),
+        "connection": (
+            "❌ Cannot connect to Ollama.\n\n"
+            "**Fix:** Open a terminal and run: `ollama serve`"
+        ),
+        "general": (
+            "⚠️ An error occurred while generating the answer.\n\n"
+            "Please try again. If the problem persists, check the API terminal for details."
+        ),
+    }
+    return messages.get(error_type, messages["general"])
+
+
+def get_greeting_response(query: str) -> str:
+    """Return a friendly response for greetings without calling the LLM."""
+    q = query.strip().lower()
+    if any(w in q for w in ["thank", "thanks", "thx"]):
+        return "You're welcome! Feel free to ask any questions about the UNECE policy documents."
+    if any(w in q for w in ["bye", "goodbye", "cya"]):
+        return "Goodbye! Come back anytime you have questions about UNECE policy documents."
+    return (
+        "Hello! I'm the UNECE Policy Chatbot. I can answer questions about "
+        "ageing, demographics, and workforce policy based on UNECE documents.\n\n"
+        "Try asking something like:\n"
+        "- *What policies help retain older workers?*\n"
+        "- *How does demographic change affect Europe?*\n"
+        "- *What causes loneliness among older persons?*"
+    )
+
+
+def is_greeting_or_offtopic(query: str) -> bool:
+    """Return True if the query is a greeting or clearly off-topic."""
+    import re
+    _GREETING_PATTERNS = [
+        r"^(hi|hello|hey|howdy|greetings|good\s+(morning|afternoon|evening))[!\s.?]*$",
+        r"^(how are you|what's up|sup|yo)[!\s.?]*$",
+        r"^(thanks|thank you|thx|cheers)[!\s.?]*$",
+        r"^(bye|goodbye|see you|cya)[!\s.?]*$",
+        r"^(ok|okay|sure|yes|no|nope|yep)[!\s.?]*$",
+        r"^[?\s!.]*$",
+    ]
+    stripped = query.strip()
+    if len(stripped) < 4:
+        return True
+    return any(
+        re.match(p, stripped, re.IGNORECASE)
+        for p in _GREETING_PATTERNS
+    )
+
+
+def get_dynamic_k(query: str, user_k: int) -> tuple[int, str]:
+    """
+    Select optimal top_k using query classification.
+    Only applies when user uses the default k — respects manual overrides.
+    """
+    default_k = cfg.RETRIEVAL_TOP_K
+
+    if user_k != default_k:
+        return user_k, "manual"
+
+    query_lower = query.lower().strip()
+
+    # Comparative — needs multiple documents
+    if any(w in query_lower for w in [
+        "compare", "comparison", "versus", "vs", "difference between",
+        "across countries", "across europe", "contrast", "how does",
+    ]):
+        return 7, "comparative"
+
+    # Factual — specific fact, less noise better
+    if any(w in query_lower for w in [
+        "what is the", "what was the", "who is", "when was", "which country",
+    ]):
+        if not any(w in query_lower for w in ["compare", "versus", "across"]):
+            return 3, "factual"
+
+    # Visual — image chunk + supporting context
+    if any(w in query_lower for w in [
+        "figure", "chart", "graph", "image", "photograph", "bar chart",
+    ]):
+        return 4, "visual"
+
+    return 5, "general"
+
+
+def adaptive_k_from_scores(
+    similarity_scores: list[float],
+    min_k: int = 2,
+    max_k: int = 8,
+    gap_threshold: float = 0.15,
+) -> tuple[int, str]:
+    """
+    CAR Algorithm — Cluster-based Adaptive Retrieval (Xu et al., Oct 2025)
+
+    Determines optimal k by finding where similarity scores drop off
+    significantly, rather than using fixed k or keyword heuristics.
+
+    Core insight from the paper:
+      Relevant chunks cluster together with similar scores.
+      A big gap in scores indicates transition from relevant to irrelevant.
+      Stop retrieval at the gap.
+
+    Args:
+        similarity_scores : list of similarity scores already sorted descending
+        min_k             : always retrieve at least this many (default 2)
+        max_k             : never retrieve more than this many (default 8)
+        gap_threshold     : minimum score drop to consider a gap (default 0.15)
+
+    Returns:
+        (optimal_k, reason) — k to use and explanation for UI display
+
+    Example:
+        scores = [0.89, 0.87, 0.85, 0.41, 0.39]
+        gap between index 2→3 = 0.85 - 0.41 = 0.44 > threshold
+        → optimal_k = 3 (stop before the gap)
+
+        scores = [0.75, 0.73, 0.71, 0.69, 0.67]
+        no gap > threshold
+        → optimal_k = 5 (use all, scores are uniformly relevant)
+    """
+    if not similarity_scores:
+        return min_k, "default"
+
+    scores = sorted(similarity_scores, reverse=True)[:max_k]
+    n      = len(scores)
+
+    if n <= min_k:
+        return n, "all relevant"
+
+    # Find the largest gap in consecutive scores
+    gaps = []
+    for i in range(1, n):
+        gap = scores[i-1] - scores[i]
+        gaps.append((gap, i))   # (gap size, index after gap)
+
+    # Find largest gap
+    max_gap, gap_index = max(gaps, key=lambda x: x[0])
+
+    if max_gap >= gap_threshold and gap_index >= min_k:
+        # Stop at the gap — chunks after are significantly less relevant
+        optimal_k = gap_index
+        reason    = f"score gap {max_gap:.2f} at position {gap_index}"
+        return max(min_k, min(optimal_k, max_k)), reason
+
+    # No significant gap — all scores are similar, use standard k
+    return min(n, max_k), "uniform relevance"
     """Response when retrieval finds nothing above the score threshold."""
     return (
         "I could not find relevant information in the available documents "

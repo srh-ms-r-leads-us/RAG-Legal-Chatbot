@@ -317,12 +317,15 @@ def render_sidebar() -> dict:
 
         # ── Retrieval ─────────────────────────────────────────────────────
         st.subheader("🔍 Retrieval Settings")
-        top_k     = st.slider("Results (top_k)", 1, cfg.API_MAX_TOP_K,
-                               cfg.RETRIEVAL_TOP_K,
-                               help="Number of document chunks retrieved per query.")
-        min_score = st.slider("Min similarity", 0.0, 1.0,
-                               cfg.RETRIEVAL_MIN_SCORE, step=0.05,
-                               help="Chunks below this score are discarded.")
+
+        min_score = st.slider(
+            "Min similarity score",
+            0.0, 1.0,
+            0.30, step=0.05,
+            help="Chunks below this score are discarded before reranking."
+        )
+
+        top_k = cfg.RETRIEVAL_TOP_K  # CAR handles k automatically
 
         st.divider()
 
@@ -330,8 +333,12 @@ def render_sidebar() -> dict:
         st.subheader("⚡ Pipeline")
         c1, c2 = st.columns(2)
         c1.metric("Hybrid", "ON" if cfg.HYBRID_SEARCH_ENABLED else "OFF")
-        c2.metric("Rerank", "ON" if cfg.RERANKER_ENABLED      else "OFF")
+        c2.metric("Rerank", "ON" if cfg.RERANKER_ENABLED else "OFF")
+        c3, c4 = st.columns(2)
+        c3.metric("Adaptive k", "CAR")
+        c4.metric("Gap δ", "1.5")
         st.caption(f"Embed: `{cfg.EMBED_MODEL}`")
+        st.caption(f"Reranker: `{cfg.RERANKER_MODEL.split('/')[-1]}`")
 
         st.divider()
 
@@ -558,27 +565,50 @@ def generate_answer(
         return response, [], []
 
     # ── Query rewriting for follow-up questions ───────────────────────────
-    # Rewrite ambiguous follow-up queries using conversation history
-    # so retrieval can find the right chunks
     history = [
         {"role": m["role"], "content": m["content"]}
         for m in st.session_state.messages[-8:]
     ]
     retrieval_query = rewrite_query_with_history(query, history)
 
-    # Show rewritten query if it changed
     if retrieval_query != query:
         st.caption(f"🔄 Searching for: *{retrieval_query}*")
 
+    # ── Stage 1: Query classification → initial k ─────────────────────────
+    from prompt_builder import get_dynamic_k, adaptive_k_from_scores
+    initial_k, query_type = get_dynamic_k(retrieval_query, top_k)
+
+    # Fetch only initial_k + 2 extra (not +3) to keep context tighter
+    fetch_k = min(initial_k + 2, cfg.API_MAX_TOP_K)
+
     # ── Step 1: Retrieve context ──────────────────────────────────────────
     with st.spinner("🔍 Searching documents ..."):
-        context_data = api_context(retrieval_query, top_k, min_score)
+        context_data = api_context(retrieval_query, fetch_k, min_score)
 
     if not context_data or context_data.get("total_results", 0) == 0:
         response = build_no_context_response()
         with st.chat_message("assistant", avatar="🤖"):
             st.markdown(response)
         return response, [], []
+
+    # ── Stage 2: CAR — rerank score gap analysis ──────────────────────────
+    confidences   = context_data.get("confidences", [])
+    rerank_scores = [c.get("rerank_score", 0.0) for c in confidences]
+
+    if rerank_scores and top_k == cfg.RETRIEVAL_TOP_K:
+        optimal_k, car_reason = adaptive_k_from_scores(
+            similarity_scores = rerank_scores,
+            min_k             = 2,
+            max_k             = fetch_k,
+            gap_threshold     = 1.5,
+        )
+
+        if optimal_k < fetch_k:
+            st.caption(f"🧠 k={optimal_k} ({query_type}, {car_reason})")
+            context_data = api_context(retrieval_query, optimal_k, min_score)
+            confidences  = context_data.get("confidences", [])
+        else:
+            st.caption(f"🧠 k={fetch_k} ({query_type}, all relevant)")
 
     context     = context_data["context"]
     citations   = context_data["citations"]
@@ -610,7 +640,55 @@ def generate_answer(
                 placeholder.markdown(full_text + "▌")
                 answer_parts.append(token)
 
-            placeholder.markdown(full_text)
+            # ── Post-processing ───────────────────────────────────────────
+            import re as _re
+
+            # Strip fake citation patterns Mistral invents
+            clean_text = full_text
+            clean_text = _re.sub(
+                r'\(Source:\s*(Not mentioned|None provided|None|N/A|'
+                r'not specified|not found|not available|not in context)[^\)]*\)',
+                '', clean_text, flags=_re.IGNORECASE
+            )
+            clean_text = _re.sub(r'  +', ' ', clean_text).strip()
+
+            # Detect "no information" hallucination — retry with simpler prompt
+            _no_info_phrases = [
+                "does not provide information",
+                "not explicitly stated",
+                "context does not",
+                "no information",
+                "cannot be found",
+                "is not mentioned",
+                "not available in",
+            ]
+            _is_no_info = any(p in clean_text.lower() for p in _no_info_phrases)
+
+            if _is_no_info and context:
+                # Retry with a more direct prompt — strip system message complexity
+                retry_prompt = (
+                    f"Context:\n{context}\n\n"
+                    f"Question: {query}\n\n"
+                    f"Find the answer in the context above and state it directly with citations "
+                    f"(Source: FILENAME — page N). Be specific.\n\nAnswer:"
+                )
+                clean_text = ""
+                answer_parts = []
+                placeholder.markdown("🔄 *Refining answer...*")
+
+                for token in ollama.stream(retry_prompt, model=model):
+                    clean_text += token
+                    answer_parts.append(token)
+
+                # Strip fake citations from retry too
+                clean_text = _re.sub(
+                    r'\(Source:\s*(Not mentioned|None provided|None|N/A)[^\)]*\)',
+                    '', clean_text, flags=_re.IGNORECASE
+                )
+                clean_text = _re.sub(r'  +', ' ', clean_text).strip()
+
+            placeholder.markdown(clean_text)
+            full_text = clean_text
 
             # Sources with full score breakdown
             if citations:
