@@ -1,0 +1,73 @@
+---
+config:
+  layout: elk
+  theme: redux-color
+---
+erDiagram
+	direction TB
+	DOCUMENTS {
+		UUID document_id PK ""
+		TEXT file_name  ""
+		TEXT source_path  ""
+		TEXT source_type  ""
+		TEXT title  ""
+		TEXT domain  ""
+		TEXT language  ""
+		TEXT checksum UK ""
+		TIMESTAMPTZ created_at  ""
+	}
+
+	PAGES {
+		UUID page_id PK ""
+		UUID document_id FK ""
+		INT page_number  ""
+		TEXT content  ""
+	}
+
+	CHUNKS {
+		UUID chunk_id PK ""
+		UUID document_id FK ""
+		INT chunk_index  ""
+		INT page_start  ""
+		INT page_end  ""
+		TEXT section_title  ""
+		TEXT content  ""
+		TEXT[] tokens  ""
+		TEXT[] lemmas  ""
+		INT token_count  ""
+		TIMESTAMPTZ created_at  ""
+	}
+
+	DOCUMENT_FEATURES {
+		UUID feature_id PK ""
+		UUID document_id FK ""
+		INT character_count  ""
+		INT word_count  ""
+		INT sentence_count  ""
+		INT paragraph_count  ""
+		INT vocabulary_size  ""
+		NUMERIC lexical_diversity  ""
+		INT heading_count  ""
+		INT h1_count  ""
+		INT h2_count  ""
+		INT h3_count  ""
+		INT h4_plus_count  ""
+		INT table_count  ""
+		INT image_count  ""
+		INT url_count  ""
+		INT email_count  ""
+		NUMERIC readability_score  ""
+		TIMESTAMPTZ created_at  ""
+	}
+
+	CHUNK_EMBEDDINGS {
+		TEXT[] ids PK ""
+		TEXT[] documents  ""
+		NUMERIC[][] embeddings  ""
+		OBJECT[] metadatas  ""
+	}
+
+	DOCUMENTS||--o{PAGES:"contains"
+	DOCUMENTS||--o{CHUNKS:"contains"
+	DOCUMENTS||--||DOCUMENT_FEATURES:"has"
+	CHUNKS||--||CHUNK_EMBEDDINGS:"embed"
