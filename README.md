@@ -166,7 +166,7 @@ rag-chatbot/
 ### 1. Clone and set up environment
 
 ```powershell
-git clone https://github.com/yourusername/rag-chatbot.git
+git clone https://github.com/srh-ms-r-leads-us/RAG-Legal-Chatbot.git
 cd rag-chatbot
 python -m venv venv
 venv\Scripts\activate        # Windows
