@@ -24,16 +24,18 @@ class ChunkResult(BaseModel):
     A single retrieved chunk returned in search results.
     Your team passes this directly into the LLM prompt as context.
     """
-    text:         str   = Field(description="Raw chunk text — pass this to the LLM.")
-    source:       str   = Field(description="Source PDF filename.")
-    doc_name:     str   = Field(description="Document name without .pdf extension.")
-    page_num:     int   = Field(description="Page number within the source PDF (1-indexed).")
-    chunk_index:  int   = Field(description="Chunk position within the page (0-indexed).")
-    similarity:   float = Field(description="Vector similarity score (0–1, higher = better).")
-    bm25_score:   float = Field(description="BM25 keyword match score.")
-    rrf_score:    float = Field(description="Reciprocal Rank Fusion combined score.")
-    rerank_score: float = Field(description="Cross-encoder rerank score (final ranking signal).")
-    citation:     str   = Field(description="Ready-made citation string e.g. 'doc.pdf — page 3'.")
+    text:         str            = Field(description="Raw chunk text — pass this to the LLM.")
+    source:       str            = Field(description="Source PDF filename.")
+    doc_name:     str            = Field(description="Document name without .pdf extension.")
+    page_num:     int            = Field(description="Page number within the source PDF (1-indexed).")
+    chunk_index:  int            = Field(description="Chunk position within the page (0-indexed).")
+    similarity:   float          = Field(description="Vector similarity score (0–1, higher = better).")
+    bm25_score:   float          = Field(description="BM25 keyword match score.")
+    rrf_score:    float          = Field(description="Reciprocal Rank Fusion combined score.")
+    rerank_score: float          = Field(description="Cross-encoder rerank score (final ranking signal).")
+    citation:     str            = Field(description="Ready-made citation string e.g. 'doc.pdf — page 3'.")
+    chunk_type:   str            = Field(default="text", description="Chunk type: text | table | image.")
+    img_path:     Optional[str]  = Field(default=None, description="Absolute path to saved image file (image chunks only).")
 
 
 # ---------------------------------------------------------------------------

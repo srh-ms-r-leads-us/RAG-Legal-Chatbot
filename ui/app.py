@@ -221,11 +221,7 @@ def api_feedback(query: str, helpful: bool, answer: str, citations: list[str]) -
 def render_score_breakdown(conf: dict) -> None:
     """
     Render full retrieval score breakdown for one source.
-    Shows all four scores so the retrieval pipeline is fully transparent:
-      - Vector similarity  → semantic meaning match
-      - BM25 score         → keyword match
-      - RRF score          → hybrid fusion score
-      - Rerank score       → final cross-encoder relevance
+    For image chunks — displays the actual image above the scores.
     """
     citation     = conf.get("citation",     "unknown")
     label        = conf.get("label",        "Low")
@@ -233,6 +229,8 @@ def render_score_breakdown(conf: dict) -> None:
     bm25_score   = conf.get("bm25_score",   0.0)
     rrf_score    = conf.get("rrf_score",    0.0)
     rerank_score = conf.get("rerank_score", 0.0)
+    chunk_type   = conf.get("chunk_type",   "text")
+    img_path     = conf.get("img_path",     "")
 
     col_class = (
         "conf-high"   if label == "High"   else
@@ -240,15 +238,28 @@ def render_score_breakdown(conf: dict) -> None:
         "conf-low"
     )
 
-    # Source header with confidence label
+    type_icon = "🖼️" if chunk_type == "image" else ("📊" if chunk_type == "table" else "📄")
+
+    # Source header
     st.markdown(
         f'<div class="source-card" style="background:#1e293b; border-left:3px solid #6366f1; '
         f'border-radius:6px; padding:8px 12px; margin:4px 0; font-size:0.85rem; color:#e2e8f0;">'
-        f'📄 <b style="color:#e2e8f0;">{citation}</b> &nbsp;|&nbsp; '
+        f'{type_icon} <b style="color:#e2e8f0;">{citation}</b> &nbsp;|&nbsp; '
         f'<span class="{col_class}">{label} confidence</span>'
         f'</div>',
         unsafe_allow_html=True,
     )
+
+    # ── Show actual image for image chunks ────────────────────────────────
+    if chunk_type == "image" and img_path:
+        from pathlib import Path as _Path
+        img_file = _Path(img_path)
+        if img_file.exists():
+            st.image(
+                str(img_file),
+                caption=f"Retrieved image from {citation}",
+                use_container_width=True,
+            )
 
     # Four score bars in 2 columns
     c1, c2 = st.columns(2)
@@ -689,6 +700,82 @@ def generate_answer(
 
             placeholder.markdown(clean_text)
             full_text = clean_text
+
+            # ── Render images and tables inline in chat ───────────────────
+            # Show actual visuals directly in the answer area
+            # so professor sees them without opening the sources panel
+            if confidences:
+                image_chunks = [
+                    c for c in confidences
+                    if c.get("chunk_type") == "image" and c.get("img_path")
+                ]
+                table_chunks = [
+                    c for c in confidences
+                    if c.get("chunk_type") == "table"
+                ]
+
+                # Render images
+                for img_conf in image_chunks:
+                    from pathlib import Path as _Path
+                    img_file = _Path(img_conf["img_path"])
+                    if img_file.exists():
+                        st.markdown("---")
+                        st.caption(f"🖼️ **Retrieved image** — {img_conf['citation']}")
+                        st.image(
+                            str(img_file),
+                            use_container_width=True,
+                        )
+
+                # Render tables
+                for tbl_conf in table_chunks:
+                    chunk_text = tbl_conf.get("text", "")
+                    if "|" not in chunk_text:
+                        continue
+
+                    lines = [l for l in chunk_text.split("\n") if l.strip().startswith("|")]
+                    if len(lines) < 2:
+                        continue
+
+                    try:
+                        import pandas as pd
+                        import io
+
+                        # Clean lines — remove empty border pipes, fix separators
+                        cleaned = []
+                        for line in lines:
+                            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+                            # Skip pure separator lines
+                            if all(set(c) <= set("-: ") for c in cells if c):
+                                continue
+                            cleaned.append(cells)
+
+                        if len(cleaned) >= 2:
+                            # First row = header, rest = data
+                            headers = cleaned[0]
+                            rows    = cleaned[1:]
+
+                            # Pad rows to match header length
+                            n = len(headers)
+                            rows = [r[:n] + [""] * (n - len(r)) for r in rows]
+
+                            df = pd.DataFrame(rows, columns=headers)
+
+                            # Drop columns that are entirely empty
+                            df = df.loc[:, (df != "").any(axis=0)]
+
+                            # Drop rows that are entirely empty
+                            df = df.loc[(df != "").any(axis=1)]
+
+                            if not df.empty:
+                                st.markdown("---")
+                                st.caption(f"📊 **Retrieved table** — {tbl_conf['citation']}")
+                                st.dataframe(df, use_container_width=True, hide_index=True)
+
+                    except Exception:
+                        # Fallback to markdown if pandas fails
+                        st.markdown("---")
+                        st.caption(f"📊 **Retrieved table** — {tbl_conf['citation']}")
+                        st.markdown("\n".join(lines))
 
             # Sources with full score breakdown
             if citations:

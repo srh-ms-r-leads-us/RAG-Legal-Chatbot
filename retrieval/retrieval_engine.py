@@ -78,6 +78,8 @@ class RetrievedChunk:
     rrf_score     : Reciprocal Rank Fusion combined score
     rerank_score  : cross-encoder rerank score (only set when reranking is on)
     citation      : human-readable citation built from source + page
+    chunk_type    : type of chunk — text | table | image
+    img_path      : path to saved image file (image chunks only)
     """
     text:         str
     source:       str
@@ -88,6 +90,8 @@ class RetrievedChunk:
     bm25_score:   float = 0.0
     rrf_score:    float = 0.0
     rerank_score: float = 0.0
+    chunk_type:   str   = "text"
+    img_path:     str   = ""
     citation:     str   = field(init=False)
 
     def __post_init__(self):
@@ -106,6 +110,8 @@ class RetrievedChunk:
             "rrf_score"   : self.rrf_score,
             "rerank_score": self.rerank_score,
             "citation"    : self.citation,
+            "chunk_type"  : self.chunk_type,
+            "img_path"    : self.img_path,
         }
 
 
@@ -378,6 +384,8 @@ class RetrieverClient:
             similarity  = similarity,
             bm25_score  = bm25_score,
             rrf_score   = rrf_score,
+            chunk_type  = metadata.get("chunk_type", "text"),
+            img_path    = metadata.get("img_path",   ""),
         )
 
     # ── Public API ───────────────────────────────────────────────────────────
@@ -490,6 +498,26 @@ class RetrieverClient:
         if cfg.RERANKER_ENABLED and self._reranker is not None:
             candidates = self._rerank(query, candidates)
 
+        # ── Step 4b: Table boost — promote table chunks for data queries ──
+        # Table chunks score lower than text chunks because they contain
+        # structured data rather than prose — their embedding similarity
+        # is systematically lower. Boost them when the query is data-focused.
+        import re as _re
+        _data_keywords = [
+            "table", "percentage", "per cent", "%", "rate", "statistics",
+            "data", "figure", "number", "how many", "how much", "proportion",
+            "share", "poverty", "poverty rate", "unemployment rate",
+        ]
+        _query_lower = query.lower()
+        _is_data_query = any(kw in _query_lower for kw in _data_keywords)
+
+        if _is_data_query:
+            for chunk in candidates:
+                if chunk.chunk_type == "table":
+                    chunk.rerank_score += 2.0   # boost table chunks by 2 points
+            # Re-sort so boosted table chunks move up in ranking
+            candidates.sort(key=lambda c: c.rerank_score, reverse=True)
+
         # ── Step 5: Apply min_score filter AFTER reranking ────────────────
         # Filter based on similarity score (most reliable cross-document metric)
         # This is done after reranking so all candidates get a fair chance
@@ -597,11 +625,13 @@ class RetrieverClient:
                 "citation"    : chunk.citation,
                 "score"       : round(normalised, 3),
                 "label"       : label,
-                # All individual scores for UI score breakdown display
                 "similarity"  : round(chunk.similarity,   4),
                 "bm25_score"  : round(chunk.bm25_score,   4),
                 "rrf_score"   : round(chunk.rrf_score,    6),
                 "rerank_score": round(chunk.rerank_score, 4),
+                "chunk_type"  : chunk.chunk_type,
+                "img_path"    : chunk.img_path,
+                "text"        : chunk.text,   # needed for table rendering in UI
             })
         return results
 

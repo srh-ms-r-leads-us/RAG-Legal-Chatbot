@@ -82,7 +82,7 @@ class Config:
     MIN_PAGE_CHARS:  int = int(os.getenv("MIN_PAGE_CHARS",  100))
 
     # Chunking strategy: static | sentence | structure
-    # static    — fixed sliding window (original)
+    # static    — fixed sliding window
     # sentence  — always cuts at sentence boundaries
     # structure — detects headings/sections, chunks by document structure
     CHUNK_STRATEGY: str = os.getenv("CHUNK_STRATEGY", "structure")
@@ -106,7 +106,7 @@ class Config:
     # ── Retrieval Engine ─────────────────────────────────────────────────────
 
     RETRIEVAL_TOP_K:         int   = int(os.getenv("RETRIEVAL_TOP_K",   5))
-    RETRIEVAL_MIN_SCORE:     float = float(os.getenv("RETRIEVAL_MIN_SCORE", 0.45))
+    RETRIEVAL_MIN_SCORE:     float = float(os.getenv("RETRIEVAL_MIN_SCORE", 0.15))
     RETRIEVAL_EXCLUDE_PAGES: dict  = json.loads(
         os.getenv("RETRIEVAL_EXCLUDE_PAGES", "{}")
     )

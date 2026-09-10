@@ -498,6 +498,14 @@ def extract_chunks_from_pdf(
                     description = describe_image_with_llava(image_bytes, context=text[:300])
 
                     if description and len(description.split()) >= 20:
+                        # Save image file to disk so UI can display it
+                        images_dir = cfg.OUTPUT_DIR / "images"
+                        images_dir.mkdir(parents=True, exist_ok=True)
+                        img_filename = f"{pdf_path.stem}_p{page_num:03d}_i{img_idx:02d}.{img_ext}"
+                        img_path     = images_dir / img_filename
+                        with open(img_path, "wb") as fh:
+                            fh.write(image_bytes)
+
                         all_chunks.append({
                             "chunk_id": f"{pdf_path.stem}_p{page_num:03d}_i{img_idx:02d}",
                             "text"    : (
@@ -512,6 +520,7 @@ def extract_chunks_from_pdf(
                                 "chunk_index" : img_idx,
                                 "chunk_type"  : "image",
                                 "img_format"  : img_ext,
+                                "img_path"    : str(img_path),  # ← saved path
                                 "strategy"    : strategy,
                             },
                         })
