@@ -441,7 +441,6 @@ Hardware:          NVIDIA GTX 1650 Ti · CUDA 12.7
   - Ritu, Ritu
   - Trac, Way
   - Yang, Zhixiao
-**Academic context:** Case study project, M.Sc. Applied Data Science and Analytics, SRH Hochschule Heidelberg. Supervisor: Professor Chandna.
 
 ---
 
