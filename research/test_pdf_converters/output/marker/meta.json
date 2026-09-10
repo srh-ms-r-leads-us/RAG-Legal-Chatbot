@@ -1,0 +1,18 @@
+{
+  "tool": "marker",
+  "input": "input/ECE_PB29_EN.pdf",
+  "elapsed_seconds": 13.221,
+  "success": true,
+  "error": null,
+  "command": [
+    "marker_single",
+    "input/ECE_PB29_EN.pdf",
+    "--output_dir",
+    "output/marker/_raw",
+    "--output_format",
+    "markdown",
+    "--paginate_output",
+    "--disable_ocr"
+  ],
+  "image_count": 8
+}

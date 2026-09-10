@@ -1,0 +1,9 @@
+{
+  "tool": "pdfplumber",
+  "input": "input/ECE_PB29_EN.pdf",
+  "elapsed_seconds": 1.549,
+  "success": true,
+  "error": null,
+  "image_count": 0,
+  "note": "result.md contains layout-preserved extracted text. No additional Markdown reconstruction was applied."
+}

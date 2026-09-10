@@ -1,0 +1,9 @@
+{
+  "tool": "pdf-inspector",
+  "input": "input/ECE_PB29_EN.pdf",
+  "elapsed_seconds": 0.08,
+  "success": true,
+  "error": null,
+  "image_count": 0,
+  "pdf_type": "text_based"
+}

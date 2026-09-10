@@ -1,0 +1,8 @@
+{
+  "tool": "pdfminer",
+  "input": "input/ECE_PB29_EN.pdf",
+  "elapsed_seconds": 0.662,
+  "success": true,
+  "error": null,
+  "image_count": 1
+}
