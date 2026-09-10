@@ -1,33 +1,3 @@
-"""
-retrieval_engine.py
--------------------
-Core retrieval module for the RAG chatbot.
-
-Full pipeline (all steps configurable via .env):
-
-    User Query
-        │
-        ├── Vector Search  (ChromaDB semantic similarity)   ──┐
-        │                                                      ├── RRF Fusion
-        └── BM25 Search    (keyword exact/near-exact match) ──┘       │
-                                                                  Reranker
-                                                             (cross-encoder)
-                                                                       │
-                                                               Top K Results
-
-Each stage can be toggled independently in .env:
-    HYBRID_SEARCH_ENABLED = true/false
-    RERANKER_ENABLED      = true/false
-
-Public API:
-    retriever = RetrieverClient()
-    results   = retriever.search("What policies help older workers?")
-    context   = retriever.format_context(results)
-
-Run (smoke test):
-    python retrieval_engine.py
-"""
-
 import logging
 import pickle
 import re

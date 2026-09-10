@@ -3,19 +3,6 @@ app.py
 ------
 UNECE Policy Chatbot — Advanced Streamlit UI
 
-Features
---------
-  ✅ Chat history with conversation memory
-  ✅ Streaming LLM responses with blinking cursor
-  ✅ Source viewer with confidence bars per citation
-  ✅ Query validation — greetings handled without retrieval
-  ✅ Answer caching — identical queries return instantly
-  ✅ Document upload — drop a PDF and ingest it directly
-  ✅ Better error messages — specific guidance per error type
-  ✅ Feedback buttons (thumbs up/down) per answer
-  ✅ Settings sidebar with all retrieval controls
-  ✅ Pipeline status indicators
-
 Run:
     streamlit run ui/app.py
 """

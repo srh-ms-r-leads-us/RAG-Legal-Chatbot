@@ -1,16 +1,3 @@
-"""
-prompt_builder.py
------------------
-Builds structured RAG prompts and validates queries.
-
-Changes from v1:
-  • Structured answer format — forces bullet points and clear sections
-  • Query validation — detects off-topic/greeting queries before retrieval
-  • Confidence instruction — LLM states how confident it is
-  • No-repeat rule — LLM never cites the same source twice consecutively
-  • Follow-up awareness — uses conversation history for context
-"""
-
 import re
 import sys
 from pathlib import Path
@@ -18,10 +5,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "ingestion"))
 from config import cfg
 
-
-# ---------------------------------------------------------------------------
-# Off-topic query patterns — detected before hitting the retrieval pipeline
-# ---------------------------------------------------------------------------
 
 # Short greetings and non-document queries that should be handled directly
 _GREETING_PATTERNS = [
@@ -63,17 +46,6 @@ def get_greeting_response(query: str) -> str:
         "- *What causes loneliness among older persons?*"
     )
 
-
-# ---------------------------------------------------------------------------
-# System message — built from 2025-2026 RAG research best practices
-#
-# Research basis:
-#   • StrictCitations strategy (Zhu et al. 2026) — highest verifiable grounding
-#   • RAG Triad framework (TruLens/RAGAS) — context relevance, groundedness, answer relevance
-#   • SurePrompts RAG guide (2026) — hedging language, synthesis rules
-#   • NightFeats NeurIPS 2025 — citation-preserving composition, contradiction handling
-#   • Mistral 7B Instruct best practices — instruction format, grounding behaviour
-# ---------------------------------------------------------------------------
 
 SYSTEM_MESSAGE = """You are a precise and trustworthy research assistant specialising in UNECE policy documents on ageing, demographics, and workforce policy.
 
