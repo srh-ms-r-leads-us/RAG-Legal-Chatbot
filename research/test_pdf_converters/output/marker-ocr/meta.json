@@ -1,0 +1,21 @@
+{
+  "tool": "marker-ocr",
+  "input": "input/ECE_PB29_EN.pdf",
+  "elapsed_seconds": 1321.48,
+  "success": true,
+  "error": null,
+  "command": [
+    "marker_single",
+    "input/ECE_PB29_EN.pdf",
+    "--output_dir",
+    "output/marker-ocr/_raw",
+    "--output_format",
+    "markdown",
+    "--paginate_output",
+    "--mode",
+    "fast",
+    "--force_ocr",
+    "--strip_existing_ocr"
+  ],
+  "image_count": 7
+}

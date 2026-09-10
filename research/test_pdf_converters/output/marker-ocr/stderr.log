@@ -1,0 +1,5 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-09-10 22:11:19,346 [INFO] marker: Table processing stats: {'tables_ocr': 2, 'tables_total': 2}
+2026-09-10 22:11:19,403 [INFO] marker: Saved markdown to output/marker-ocr/_raw/ECE_PB29_EN
+2026-09-10 22:11:19,403 [INFO] marker: Total time: 1306.5873563289642
+Force-killed llamacpp (pid 54659)
