@@ -82,7 +82,7 @@ class Config:
     MIN_PAGE_CHARS:  int = int(os.getenv("MIN_PAGE_CHARS",  100))
 
     # Chunking strategy: static | sentence | structure
-    # static    — fixed sliding window
+    # static    — fixed sliding window (original)
     # sentence  — always cuts at sentence boundaries
     # structure — detects headings/sections, chunks by document structure
     CHUNK_STRATEGY: str = os.getenv("CHUNK_STRATEGY", "structure")
@@ -91,7 +91,7 @@ class Config:
     EXTRACT_TABLES: bool = os.getenv("EXTRACT_TABLES", "true").lower() == "true"
 
     # Image understanding — requires LLaVA in Ollama (ollama pull llava)
-    EXTRACT_IMAGES: bool = os.getenv("EXTRACT_IMAGES", "false").lower() == "true"
+    EXTRACT_IMAGES: bool = os.getenv("EXTRACT_IMAGES", "true").lower() == "true"
 
     # ── Embedding ────────────────────────────────────────────────────────────
 
@@ -106,7 +106,7 @@ class Config:
     # ── Retrieval Engine ─────────────────────────────────────────────────────
 
     RETRIEVAL_TOP_K:         int   = int(os.getenv("RETRIEVAL_TOP_K",   5))
-    RETRIEVAL_MIN_SCORE:     float = float(os.getenv("RETRIEVAL_MIN_SCORE", 0.15))
+    RETRIEVAL_MIN_SCORE:     float = float(os.getenv("RETRIEVAL_MIN_SCORE", 0.25))
     RETRIEVAL_EXCLUDE_PAGES: dict  = json.loads(
         os.getenv("RETRIEVAL_EXCLUDE_PAGES", "{}")
     )
@@ -148,7 +148,7 @@ class Config:
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
     # Model name — must match a model pulled with: ollama pull <model>
-    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "mistral")
+    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "llama3.1:8b")
 
     # Maximum tokens the LLM generates per response
     OLLAMA_MAX_TOKENS: int = int(os.getenv("OLLAMA_MAX_TOKENS", 1024))
@@ -157,7 +157,7 @@ class Config:
     OLLAMA_TEMPERATURE: float = float(os.getenv("OLLAMA_TEMPERATURE", 0.1))
 
     # Timeout in seconds — increase for slower machines or larger models
-    OLLAMA_TIMEOUT: int = int(os.getenv("OLLAMA_TIMEOUT", 120))
+    OLLAMA_TIMEOUT: int = int(os.getenv("OLLAMA_TIMEOUT", 300))
 
     # Stream tokens to UI as they generate — better user experience
     OLLAMA_STREAM: bool = os.getenv("OLLAMA_STREAM", "true").lower() == "true"
